@@ -251,10 +251,10 @@ function updateClock() {
   const now = new Date();
   const hour = now.getHours();
   const minute = now.getMinutes();
-  if (hour >=17 || hour < 9) {
+  if (hour >=20 || hour < 9) {
     document.querySelector('.avatar').src = 'Karen-buiscet.png';
   } else if (hour === 16 && minute >= 47) {
-    document.querySelector('.avatar').src = 'Karen-leaving.png';
+    document.querySelector('.avatar').src = 'Karen-buiscet.png';
   } else {
         document.querySelector('.avatar').src = 'karen.jpeg';
   }
