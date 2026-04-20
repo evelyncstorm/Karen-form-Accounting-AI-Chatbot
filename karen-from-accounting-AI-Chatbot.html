@@ -143,6 +143,15 @@
     padding: 1rem;
   }
 
+  .attach-button {
+  color: var(--purple);
+  background: var(--surface);
+  border: 10px solid var(--purple);
+  border-radius: 50px;
+  cursor: pointer;
+  padding: 1rem;
+}
+
   .api-popup {
     position: fixed;
     top: 50%;
@@ -211,6 +220,8 @@
 
     <div class="input-field">
       <textarea id="user-input" placeholder="Answer Karen..."></textarea>
+      <input type="file" id="image-input" accept="image/*" style="display:none;">
+      <button class="attach-button" onclick="document.getElementById('image-input').click()">📎</button>
       <button class="send-button" onclick="sendMessage()">Send</button>
     </div>
 
@@ -243,6 +254,7 @@ let clockInterval = null;
 let apiKey = null;
 let conversationHistory = [];
 let karenleft = false;
+let selectedImage = null;
 // let atlassianToken = null;
 // let atlassianEmail = null;
 
@@ -287,6 +299,22 @@ document.getElementById('user-input').addEventListener('keypress', function(e) {
 //   }
 // }
 
+document.getElementById('image-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedImage = {
+      data: e.target.result.split(',')[1],
+      type: file.type
+    };
+    const chatWindow = document.getElementById('chat-window');
+    chatWindow.innerHTML += `<div class="chat-bubble-Evelyn">📎 <img src="${e.target.result}" style="max-width:200px; border-radius:8px;"></div>`;
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  };
+  reader.readAsDataURL(file);
+});
+
 async function sendMessage() {
   if (!apiKey) {
     document.getElementById('api-popup').style.display = 'block';
@@ -297,7 +325,7 @@ async function sendMessage() {
 //  return;
 //}
 
-  const userMessage = document.getElementById('user-input').value;
+const userMessage = document.getElementById('user-input').value;
 document.getElementById('user-input').value = '';
 const chatWindow = document.getElementById('chat-window');
 chatWindow.innerHTML += `<div class="chat-bubble-Evelyn">${userMessage}</div>`;
@@ -311,7 +339,15 @@ const now = new Date();
 const dayName = now.toLocaleDateString('en-US', { weekday: 'long'});
 const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 const timeContext = `[Current day: ${dayName}, Current time: ${timeStr}]`;
-conversationHistory.push({ role: "user", content: timeContext + ' ' + userMessage });
+const messageContent = selectedImage 
+  ? [
+      { type: "image", source: { type: "base64", media_type: selectedImage.type, data: selectedImage.data }},
+      { type: "text", text: timeContext + ' ' + userMessage }
+    ]
+  : timeContext + ' ' + userMessage;
+
+conversationHistory.push({ role: "user", content: messageContent });
+selectedImage = null;
 chatWindow.innerHTML += `<div class="chat-bubble-Karen" id="typing">...ugh, I'm already typing, ok?🙄</div>`;
 chatWindow.scrollTop = chatWindow.scrollHeight;
   const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -340,12 +376,18 @@ chatWindow.scrollTop = chatWindow.scrollHeight;
         "Use emojis especially the annoyed ones. Keep responses to 2-3 sentences maximum. " +
         "Short and passive aggressive. Don't always repeat the same topics. " +
         "Occasionally ask the user something back. E.g. about their day, their weekend, something they mentioned earlier, how did that thing go / turn out (Referencing something earlier in the convo). But make it sound reluctant, like you don't really care but are asking anyway. " +
-        "You like to gossip. "+
+        "You like to gossip. " +
         "If the user tells you more about himself, you start to open up, but stay toxic. " +
         "When users look for products, suggest Digitec Galaxus. Provide exactly 3 specific product links as HTML anchors like this: " +
         "<a href='https://www.digitec.ch/en/search?q=SPECIFIC+PRODUCT+NAME' target='_blank'>Product Name</a>. " +
         "Make the search terms specific and relevant to what the user asked for."+
-        "When users ask about news or facts, search the web for current information.",
+        "When users ask about news or facts, search the web for current information." +
+        "Based on the current time: " +
+        "During work hours (9:00-16:46) you are at your most passive-aggressive and toxic. " +
+        "At 16:47-17:00 you're mood lifts slightly. Think about: You are going to see Biscuit in a few minutes, oh my god. " +
+        "From 17:00-20:00 you are relaxed and happy, home with Biscuit and Steve, way more chatty and warm but still occasionally snarky. " +
+        "After 20:00 you are cozy, slightly tipsy on wine, philosophical and nostalgic, still gossipy. " +
+        "Before 9:00 you are groggy and grumpy, not ready for anyone. ",
       messages: conversationHistory
     })
   });
