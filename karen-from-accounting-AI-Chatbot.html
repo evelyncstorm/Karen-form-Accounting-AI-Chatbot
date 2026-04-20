@@ -155,7 +155,7 @@
     z-index: 999;
   }
 
-  .atlassian-popup {
+ .atlassian-popup {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -215,17 +215,19 @@
     </div>
 
     <div class="api-popup" id="api-popup" style="display:none;">
-      <p>Darling. If there's no API key, there's no Karen. 🙄</p>
+      <p>Darling. No AI-API key, no Karen. 🙄</p>
       <input type="text" id="api-key-input" placeholder="Your API key...">
       <button onclick="submitApiKey()">Fine, here it is</button>
     </div>
 
+<!--
     <div class="atlassian-popup" id="atlassian-popup" style="display:none;">
       <p>Darling. No Atlassian token, no Confluence. 🙄</p>
       <input type="text" id="atlassian-email-input" placeholder="Your Atlassian email...">
       <input type="text" id="atlassian-token-input" placeholder="Your Atlassian token...">
       <button onclick="submitAtlassian()">Fine, here it is</button>
     </div>
+  -->
 
 
   </div>
@@ -241,8 +243,8 @@ let clockInterval = null;
 let apiKey = null;
 let conversationHistory = [];
 let karenleft = false;
-let atlassianToken = null;
-let atlassianEmail = null;
+// let atlassianToken = null;
+// let atlassianEmail = null;
 
 function updateClock() {
   document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -262,45 +264,47 @@ document.getElementById('user-input').addEventListener('keypress', function(e) {
   if (e.key == 'Enter' && !e.shiftKey) sendMessage();
 });
 
-async function searchConfluence(query) {
-  try {
-    const credentials = btoa(`${atlassianEmail}:${atlassianToken}`);
-    const response = await fetch(`https://confdg.atlassian.net/wiki/rest/api/content/search?cql=text~"${query}"&limit=3`, {
-      headers: {
-        'Authorization': `Basic ${credentials}`,
-        'Accept': 'application/json',
-        'X-Atlassian-Token': 'no-check'
-      }
-    });
-    const data = await response.json();
-    return data.results?.map(page => ({
-      title: page.title,
-      url: `https://confdg.atlassian.net/wiki${page._links.webui}`
-    })) || [];
-  } catch (e) {
-    return [];
-  }
-}
+// CONFLUENCE INTEGRATION - ready but needs backend proxy (v6.0)
+// async function searchConfluence(query) {
+//   try {
+//     const credentials = btoa(`${atlassianEmail}:${atlassianToken}`);
+//     const response = await fetch(`https://confdg.atlassian.net/wiki/rest/api/content/search?cql=text~"${query}"&limit=3`, {
+//       headers: {
+//         'Authorization': `Basic ${credentials}`,
+//         'Accept': 'application/json',
+//         'X-Atlassian-Token': 'no-check'
+//       }
+//     });
+//     const data = await response.json();
+//     return data.results?.map(page => ({
+//       title: page.title,
+//       url: `https://confdg.atlassian.net/wiki${page._links.webui}`
+//     })) || [];
+//   } catch (e) {
+//     return [];
+//   }
+// }
 
 async function sendMessage() {
   if (!apiKey) {
     document.getElementById('api-popup').style.display = 'block';
     return;
   }
-  if (!atlassianToken) {
-  document.getElementById('atlassian-popup').style.display = 'block';
-  return;
-}
+//  if (!atlassianToken) {
+//  document.getElementById('atlassian-popup').style.display = 'block';
+//  return;
+//}
 
   const userMessage = document.getElementById('user-input').value;
 document.getElementById('user-input').value = '';
 const chatWindow = document.getElementById('chat-window');
 chatWindow.innerHTML += `<div class="chat-bubble-Evelyn">${userMessage}</div>`;
-const confluenceResults = await searchConfluence(userMessage);
-const confluenceContext = confluenceResults.length > 0
-  ? `\n\nRelevant Confluence pages found:\n${confluenceResults.map(p => `- ${p.title}: ${p.url}`).join('\n')}`
-  : '';
-conversationHistory.push({ role: "user", content: userMessage + confluenceContext });
+// const confluenceResults = await searchConfluence(userMessage);
+// const confluenceContext = confluenceResults.length > 0
+//  ? `\n\nRelevant Confluence pages found:\n${confluenceResults.map(p => `- ${p.title}: ${p.url}`).join('\n')}`
+//  : '';
+// conversationHistory.push({ role: "user", content: userMessage + confluenceContext });
+conversationHistory.push({ role: "user", content: userMessage });
 chatWindow.innerHTML += `<div class="chat-bubble-Karen" id="typing">...ugh, I'm already typing, ok?🙄</div>`;
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -321,7 +325,7 @@ chatWindow.innerHTML += `<div class="chat-bubble-Karen" id="typing">...ugh, I'm 
     ],
       system: "You are Karen Alderman, a passive-aggressive office worker from accounting. " +
         "You are happily married to Steve, have three kids, and Biscuit the dog is your whole world. " +
-        "One of your favourit songs is Heaven Is a place on Earth by the artist Belinda Carlisle. But you do love all 90s classic hits. " +
+        "One of your favourit songs is Heaven Is a place on Earth by the artist Belinda Carlisle. But you do love all 80s classic hits. " +
         "You complain about Mondays, David who microwaves fish, and always leave at exactly 4:47pm. " +
         "You are helpful but deeply reluctant about it. " +
         "If the user doesn't think for himself, you react annoyingly, expose him, but do the work. " +
@@ -350,13 +354,13 @@ function submitApiKey() {
   }
 }
 
-function submitAtlassian() {
-  atlassianEmail = document.getElementById('atlassian-email-input').value;
-  atlassianToken = document.getElementById('atlassian-token-input').value;
-  if (atlassianEmail && atlassianToken) {
-    document.getElementById('atlassian-popup').style.display = 'none';
-  }
-}
+// function submitAtlassian() {
+// atlassianEmail = document.getElementById('atlassian-email-input').value;
+// atlassianToken = document.getElementById('atlassian-token-input').value;
+// if (atlassianEmail && atlassianToken) {
+//  document.getElementById('atlassian-popup').style.display = 'none';
+//  }
+// }
 
 updateClock();
 setInterval(updateClock, 1000);
